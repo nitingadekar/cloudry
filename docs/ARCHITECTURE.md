@@ -281,3 +281,13 @@ docker compose up --build
 - [ ] Dark mode toggle
 - [ ] PWA support (offline QR generator, hash calculator)
 - [ ] API keys for programmatic access
+
+## Additional Tools (Phase 2)
+
+| # | Category | Tool | Description |
+|---|----------|------|-------------|
+| 13 | PDF | Compress | Reduce PDF file size |
+| 14 | Image | Crop | Crop images to selection |
+| 15 | Text | Base64 Encode/Decode | Convert text/files to/from Base64 |
+| 16 | Text | JSON Formatter | Pretty-print and validate JSON |
+| 17 | Design | Color Picker/Converter | HEX↔RGB↔HSL conversion |

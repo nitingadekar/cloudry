@@ -127,6 +127,29 @@ class PDFService:
         logger.info("Watermark added", extra={"text": text})
         return output
 
+    def compress(self, content: bytes) -> io.BytesIO:
+        """Compress a PDF by removing metadata and optimizing streams."""
+        pdf = pikepdf.open(io.BytesIO(content))
+
+        # Remove metadata to reduce size
+        with pdf.open_metadata():
+            # Opening metadata context clears XMP
+            pass
+        if "/Info" in pdf.trailer:
+            del pdf.trailer["/Info"]
+
+        # Save with object stream mode for better compression
+        output = io.BytesIO()
+        pdf.save(output, linearize=True, object_stream_mode=pikepdf.ObjectStreamMode.generate)
+        pdf.close()
+        output.seek(0)
+
+        logger.info(
+            "PDF compressed",
+            extra={"original_size": len(content), "compressed_size": output.getbuffer().nbytes},
+        )
+        return output
+
     @staticmethod
     def _parse_page_ranges(pages: str, total_pages: int) -> list[int]:
         """Parse page range string into 0-indexed page numbers.

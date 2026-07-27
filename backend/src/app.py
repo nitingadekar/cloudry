@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.config import settings
 from src.logging_config import get_logger, setup_logging
 from src.middleware.rate_limiter import limiter
-from src.routers import hash, image, markdown, pdf, qr
+from src.routers import hash, image, markdown, pdf, qr, text
 
 setup_logging()
 logger = get_logger("app")
@@ -70,3 +70,4 @@ app.include_router(image.router, prefix="/api/v1/image", tags=["Image Tools"])
 app.include_router(qr.router, prefix="/api/v1/qr", tags=["QR Tools"])
 app.include_router(hash.router, prefix="/api/v1/hash", tags=["Hash Tools"])
 app.include_router(markdown.router, prefix="/api/v1/markdown", tags=["Markdown Tools"])
+app.include_router(text.router, prefix="/api/v1/text", tags=["Text Tools"])

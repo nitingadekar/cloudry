@@ -78,3 +78,15 @@ async def add_watermark(file: UploadFile = File(...), text: str = Form(...)):
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=watermarked_{file.filename}"},
     )
+
+
+@router.post("/compress", dependencies=[Depends(verify_turnstile)])
+async def compress_pdf(file: UploadFile = File(...)):
+    """Compress a PDF to reduce file size."""
+    content = await file.read()
+    result = pdf_service.compress(content)
+    return StreamingResponse(
+        result,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=compressed_{file.filename}"},
+    )
