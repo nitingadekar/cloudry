@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Hash Calculator - Cloudry</title>
+    <meta name="description" content="Calculate MD5, SHA1, SHA256 file checksums online for free.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2"><span class="text-2xl">☁️</span><span class="text-xl font-bold text-gray-800">Cloudry</span></a>
+            <a href="/" class="text-sm text-blue-600 hover:underline">← All Tools</a>
+        </div>
+    </header>
+
+    <main class="max-w-2xl mx-auto px-4 py-12" x-data="fileHash()">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">#️⃣ File Hash Calculator</h1>
+        <p class="text-gray-600 mb-8">Calculate MD5, SHA1, and SHA256 checksums for any file.</p>
+
+        <div class="bg-white rounded-xl border-2 border-dashed border-gray-300 p-8 text-center hover:border-blue-400 transition cursor-pointer"
+             @click="$refs.fileInput.click()">
+            <input type="file" x-ref="fileInput" @change="handleFile($event)" class="hidden">
+            <template x-if="!file">
+                <div>
+                    <p class="text-4xl mb-3">📁</p>
+                    <p class="text-gray-700 font-medium">Drop any file here or click to select</p>
+                </div>
+            </template>
+            <template x-if="file">
+                <div>
+                    <p class="text-4xl mb-3">✅</p>
+                    <p class="text-gray-700 font-medium" x-text="file.name"></p>
+                </div>
+            </template>
+        </div>
+
+        <button x-show="file" @click="calculate()" :disabled="loading"
+                class="mt-6 w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 transition">
+            <span x-show="!loading">#️⃣ Calculate Hashes</span>
+            <span x-show="loading">⏳ Computing...</span>
+        </button>
+
+        <!-- Results -->
+        <div x-show="result" class="mt-6 bg-white rounded-xl border p-6 space-y-3">
+            <h3 class="font-semibold text-gray-800 mb-3">Results</h3>
+            <template x-for="(value, key) in result?.hashes || {}" :key="key">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-1">
+                    <span class="text-xs font-bold text-gray-500 uppercase w-16" x-text="key"></span>
+                    <code class="text-xs bg-gray-100 px-3 py-1.5 rounded flex-1 font-mono break-all cursor-pointer hover:bg-blue-50"
+                          @click="navigator.clipboard.writeText(value); copied = key"
+                          x-text="value"></code>
+                    <span x-show="copied === key" class="text-xs text-green-600">Copied!</span>
+                </div>
+            </template>
+            <p class="text-xs text-gray-500 mt-2" x-text="'File: ' + result?.filename + ' (' + formatSize(result?.size_bytes) + ')'"></p>
+        </div>
+
+        <p id="status" class="mt-4 text-sm font-medium"></p>
+    </main>
+
+    <footer class="mt-16 py-8 text-center text-sm text-gray-500">
+        <p>🔒 Files processed in memory. Never stored on our servers.</p>
+    </footer>
+
+    <script src="/assets/js/app.js"></script>
+    <script>
+    function fileHash() {
+        return {
+            file: null,
+            loading: false,
+            result: null,
+            copied: null,
+
+            handleFile(event) { this.file = event.target.files[0]; this.result = null; },
+            formatSize(bytes) {
+                if (!bytes) return '';
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            },
+
+            async calculate() {
+                if (!this.file) return;
+                this.loading = true;
+                this.result = null;
+                this.copied = null;
+
+                const formData = new FormData();
+                formData.append('file', this.file);
+
+                try {
+                    setStatus('processing', 'Computing hashes...');
+                    this.result = await submitToolJson('/hash/calculate', formData);
+                    setStatus('success', 'Done! Click any hash to copy.');
+                } catch (e) {
+                    setStatus('error', e.message);
+                }
+                this.loading = false;
+            }
+        };
+    }
+    </script>
+</body>
+</html>

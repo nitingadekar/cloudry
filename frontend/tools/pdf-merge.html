@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Merge - Cloudry</title>
+    <meta name="description" content="Merge multiple PDF files into one document online for free.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2"><span class="text-2xl">☁️</span><span class="text-xl font-bold text-gray-800">Cloudry</span></a>
+            <a href="/" class="text-sm text-blue-600 hover:underline">← All Tools</a>
+        </div>
+    </header>
+
+    <main class="max-w-2xl mx-auto px-4 py-12" x-data="pdfMerge()">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">📎 PDF Merge</h1>
+        <p class="text-gray-600 mb-8">Combine multiple PDF files into a single document.</p>
+
+        <div class="bg-white rounded-xl border-2 border-dashed border-gray-300 p-8 text-center hover:border-blue-400 transition cursor-pointer"
+             @click="$refs.fileInput.click()"
+             @dragover.prevent="dragOver = true"
+             @dragleave="dragOver = false"
+             @drop.prevent="handleDrop($event)"
+             :class="{ 'border-blue-400 bg-blue-50': dragOver }">
+            
+            <input type="file" x-ref="fileInput" @change="handleFiles($event)" accept=".pdf" multiple class="hidden">
+            
+            <template x-if="files.length === 0">
+                <div>
+                    <p class="text-4xl mb-3">📄📄</p>
+                    <p class="text-gray-700 font-medium">Drop PDF files here or click to select</p>
+                    <p class="text-sm text-gray-500 mt-1">Select 2 or more PDFs • Max 20MB each</p>
+                </div>
+            </template>
+
+            <template x-if="files.length > 0">
+                <div>
+                    <p class="text-4xl mb-3">✅</p>
+                    <p class="text-gray-700 font-medium" x-text="files.length + ' files selected'"></p>
+                </div>
+            </template>
+        </div>
+
+        <!-- File List -->
+        <div x-show="files.length > 0" class="mt-4 space-y-2">
+            <template x-for="(file, index) in files" :key="index">
+                <div class="flex items-center justify-between bg-white border rounded-lg px-4 py-2">
+                    <span class="text-sm text-gray-700" x-text="file.name"></span>
+                    <button @click="removeFile(index)" class="text-red-500 text-sm hover:underline">Remove</button>
+                </div>
+            </template>
+        </div>
+
+        <button x-show="files.length >= 2" @click="merge()" :disabled="loading"
+                class="mt-6 w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 transition">
+            <span x-show="!loading">📎 Merge PDFs</span>
+            <span x-show="loading">⏳ Merging...</span>
+        </button>
+        <p x-show="files.length === 1" class="mt-4 text-sm text-yellow-600">Select at least 2 PDF files to merge.</p>
+
+        <p id="status" class="mt-4 text-sm font-medium"></p>
+    </main>
+
+    <footer class="mt-16 py-8 text-center text-sm text-gray-500">
+        <p>🔒 Files processed in memory. Never stored on our servers.</p>
+    </footer>
+
+    <script src="/assets/js/app.js"></script>
+    <script>
+    function pdfMerge() {
+        return {
+            files: [],
+            loading: false,
+            dragOver: false,
+
+            handleFiles(event) { this.files = [...this.files, ...event.target.files]; },
+            handleDrop(event) { this.dragOver = false; this.files = [...this.files, ...event.dataTransfer.files]; },
+            removeFile(index) { this.files.splice(index, 1); },
+
+            async merge() {
+                if (this.files.length < 2) return;
+                this.loading = true;
+                const formData = new FormData();
+                this.files.forEach(f => formData.append('files', f));
+                try {
+                    await submitTool('/pdf/merge', formData, 'merged.pdf');
+                } catch (e) {}
+                this.loading = false;
+            }
+        };
+    }
+    </script>
+</body>
+</html>

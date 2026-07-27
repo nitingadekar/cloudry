@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Formatter - Cloudry</title>
+    <meta name="description" content="Format and validate JSON online for free. Pretty-print minified JSON with syntax highlighting.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2"><span class="text-2xl">☁️</span><span class="text-xl font-bold text-gray-800">Cloudry</span></a>
+            <a href="/" class="text-sm text-blue-600 hover:underline">← All Tools</a>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 py-12" x-data="jsonFormatter()">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">{ } JSON Formatter</h1>
+        <p class="text-gray-600 mb-8">Pretty-print and validate JSON. Paste minified JSON and get formatted output.</p>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Input -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Input (paste JSON here)</label>
+                <textarea x-model="input" rows="14" placeholder='{"name":"cloudry","tools":["pdf","image","qr"]}'
+                          class="w-full border border-gray-300 rounded-lg px-4 py-3 font-mono text-sm focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+            </div>
+            <!-- Output -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Output
+                    <span x-show="valid === true" class="text-green-600">✓ Valid</span>
+                    <span x-show="valid === false" class="text-red-600">✗ Invalid</span>
+                </label>
+                <pre class="w-full border border-gray-300 rounded-lg px-4 py-3 font-mono text-sm bg-gray-50 overflow-auto h-[336px]"
+                     x-text="output || 'Formatted JSON will appear here...'"></pre>
+            </div>
+        </div>
+
+        <div class="flex gap-3 mt-4">
+            <button @click="format()" :disabled="!input.trim()"
+                    class="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 transition">
+                Format JSON
+            </button>
+            <button @click="minify()" :disabled="!input.trim()"
+                    class="flex-1 bg-gray-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-700 disabled:bg-gray-400 transition">
+                Minify
+            </button>
+            <button @click="copy()" x-show="output" 
+                    class="bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700 transition">
+                <span x-text="justCopied ? '✓ Copied' : 'Copy'"></span>
+            </button>
+        </div>
+
+        <p x-show="error" class="mt-3 text-sm text-red-600" x-text="error"></p>
+    </main>
+
+    <footer class="mt-16 py-8 text-center text-sm text-gray-500">
+        <p>🔒 Processing happens locally in your browser + server. No data stored.</p>
+    </footer>
+
+    <script>
+    function jsonFormatter() {
+        return {
+            input: '',
+            output: '',
+            valid: null,
+            error: '',
+            justCopied: false,
+
+            format() {
+                this.error = '';
+                try {
+                    const parsed = JSON.parse(this.input);
+                    this.output = JSON.stringify(parsed, null, 2);
+                    this.valid = true;
+                } catch (e) {
+                    this.output = '';
+                    this.valid = false;
+                    this.error = e.message;
+                }
+            },
+
+            minify() {
+                this.error = '';
+                try {
+                    const parsed = JSON.parse(this.input);
+                    this.output = JSON.stringify(parsed);
+                    this.valid = true;
+                } catch (e) {
+                    this.valid = false;
+                    this.error = e.message;
+                }
+            },
+
+            copy() {
+                navigator.clipboard.writeText(this.output);
+                this.justCopied = true;
+                setTimeout(() => this.justCopied = false, 2000);
+            }
+        };
+    }
+    </script>
+</body>
+</html>
