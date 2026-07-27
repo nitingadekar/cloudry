@@ -1,0 +1,32 @@
+name: cloudry
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      ENVIRONMENT: development
+      CORS_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000"
+      TURNSTILE_ENABLED: "false"
+      RATE_LIMIT_PER_MINUTE: "100"
+      MAX_FILE_SIZE_MB: "20"
+      LOG_LEVEL: "debug"
+    volumes:
+      - ./backend/src:/app/src
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    image: nginx:alpine
+    ports:
+      - "3000:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      backend:
+        condition: service_healthy

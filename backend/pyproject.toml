@@ -1,0 +1,55 @@
+[project]
+name = "cloudry"
+version = "0.1.0"
+description = "Cloudry.in - Free online utilities (PDF, Image, QR tools)"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.34.0",
+    "python-multipart>=0.0.18",
+    "pydantic-settings>=2.7.0",
+    "python-dotenv>=1.0.1",
+    "python-json-logger>=3.0.0",
+    "slowapi>=0.1.9",
+    "httpx>=0.28.0",
+    "pikepdf>=9.4.0",
+    "pypdf>=5.1.0",
+    "Pillow>=11.0.0",
+    "img2pdf>=0.5.1",
+    "pdf2image>=1.17.0",
+    "qrcode[pil]>=8.0",
+    "reportlab>=4.2.0",
+    "weasyprint>=63.0",
+    "markdown>=3.7",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=6.0.0",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.8.0",
+    "httpx>=0.28.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "S"]
+ignore = ["S603", "S607", "S113", "E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
