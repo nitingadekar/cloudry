@@ -3,7 +3,6 @@
 import io
 
 import markdown
-import weasyprint
 
 from src.logging_config import get_logger
 
@@ -80,6 +79,14 @@ class MarkdownService:
 
         # Convert HTML to PDF
         output = io.BytesIO()
+        try:
+            import weasyprint
+        except OSError as e:
+            raise RuntimeError(
+                "WeasyPrint system dependencies not installed. "
+                "Install via: brew install pango gdk-pixbuf libffi (macOS) "
+                "or apt-get install libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 libcairo2 (Linux)"
+            ) from e
         weasyprint.HTML(string=html).write_pdf(output)
         output.seek(0)
 

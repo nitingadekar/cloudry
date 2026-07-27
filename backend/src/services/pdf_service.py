@@ -6,7 +6,6 @@ import zipfile
 import pikepdf
 from pypdf import PdfReader, PdfWriter
 from reportlab.lib.pagesizes import letter
-from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 
 from src.logging_config import get_logger
@@ -27,8 +26,8 @@ class PDFService:
             pdf = pikepdf.open(io.BytesIO(content), password=password)
         except pikepdf.PasswordError:
             if password:
-                raise ValueError("Incorrect password provided")
-            raise ValueError("This PDF requires a password to open. Please provide the password.")
+                raise ValueError("Incorrect password provided") from None
+            raise ValueError("This PDF requires a password to open. Please provide the password.") from None
 
         output = io.BytesIO()
         pdf.save(output)
