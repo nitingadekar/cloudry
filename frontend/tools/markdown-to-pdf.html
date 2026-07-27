@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown to PDF - Cloudry</title>
+    <meta name="description" content="Convert Markdown text to a styled PDF document online for free.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2"><span class="text-2xl">☁️</span><span class="text-xl font-bold text-gray-800">Cloudry</span></a>
+            <a href="/" class="text-sm text-blue-600 hover:underline">← All Tools</a>
+        </div>
+    </header>
+
+    <main class="max-w-2xl mx-auto px-4 py-12" x-data="markdownPdf()">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">📝 Markdown to PDF</h1>
+        <p class="text-gray-600 mb-8">Write or paste Markdown and download it as a nicely styled PDF.</p>
+
+        <div class="bg-white rounded-xl border p-6">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Document title</label>
+                <input type="text" x-model="title" placeholder="My Document"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Markdown content</label>
+                <textarea x-model="content" rows="12" placeholder="# Hello World
+
+This is **bold** and this is *italic*.
+
+## Features
+- Item one
+- Item two
+
+> A blockquote
+
+```
+code block
+```"
+                          class="w-full border border-gray-300 rounded-lg px-4 py-3 font-mono text-sm focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+            </div>
+        </div>
+
+        <button x-show="content.trim()" @click="convert()" :disabled="loading"
+                class="mt-6 w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 transition">
+            <span x-show="!loading">📝 Convert to PDF</span>
+            <span x-show="loading">⏳ Converting...</span>
+        </button>
+        <p id="status" class="mt-4 text-sm font-medium"></p>
+    </main>
+
+    <footer class="mt-16 py-8 text-center text-sm text-gray-500"><p>🔒 Content processed in memory. Never stored.</p></footer>
+    <script src="/assets/js/app.js"></script>
+    <script>
+    function markdownPdf() {
+        return {
+            content: '', title: 'Document', loading: false,
+            async convert() {
+                this.loading = true;
+                const fd = new FormData();
+                fd.append('content', this.content);
+                fd.append('title', this.title || 'Document');
+                try { await submitTool('/markdown/to-pdf', fd, `${this.title || 'document'}.pdf`); } catch(e) {}
+                this.loading = false;
+            }
+        };
+    }
+    </script>
+</body>
+</html>

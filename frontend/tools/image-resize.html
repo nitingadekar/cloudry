@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Resize - Cloudry</title>
+    <meta name="description" content="Resize images to specific dimensions online for free.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2"><span class="text-2xl">☁️</span><span class="text-xl font-bold text-gray-800">Cloudry</span></a>
+            <a href="/" class="text-sm text-blue-600 hover:underline">← All Tools</a>
+        </div>
+    </header>
+
+    <main class="max-w-2xl mx-auto px-4 py-12" x-data="imageResize()">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">📐 Image Resize</h1>
+        <p class="text-gray-600 mb-8">Resize images to exact pixel dimensions.</p>
+
+        <div class="bg-white rounded-xl border-2 border-dashed border-gray-300 p-8 text-center hover:border-blue-400 transition cursor-pointer"
+             @click="$refs.fileInput.click()">
+            <input type="file" x-ref="fileInput" @change="handleFile($event)" accept="image/*" class="hidden">
+            <template x-if="!file">
+                <div><p class="text-4xl mb-3">📁</p><p class="text-gray-700 font-medium">Drop an image here or click to select</p></div>
+            </template>
+            <template x-if="file">
+                <div><p class="text-4xl mb-3">✅</p><p class="text-gray-700 font-medium" x-text="file.name"></p></div>
+            </template>
+        </div>
+
+        <div class="mt-4 grid grid-cols-2 gap-4" x-show="file">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Width (px)</label>
+                <input type="number" x-model="width" placeholder="800" min="1" max="10000"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Height (px)</label>
+                <input type="number" x-model="height" placeholder="600" min="1" max="10000"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+            </div>
+        </div>
+        <p class="text-xs text-gray-500 mt-2" x-show="file">Common sizes: 1920×1080, 1280×720, 800×600, 500×500</p>
+
+        <button x-show="file && width && height" @click="resize()" :disabled="loading"
+                class="mt-6 w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 transition">
+            <span x-show="!loading">📐 Resize Image</span>
+            <span x-show="loading">⏳ Resizing...</span>
+        </button>
+        <p id="status" class="mt-4 text-sm font-medium"></p>
+    </main>
+
+    <footer class="mt-16 py-8 text-center text-sm text-gray-500"><p>🔒 Files processed in memory. Never stored.</p></footer>
+    <script src="/assets/js/app.js"></script>
+    <script>
+    function imageResize() {
+        return {
+            file: null, width: '', height: '', loading: false,
+            handleFile(e) { this.file = e.target.files[0]; },
+            async resize() {
+                this.loading = true;
+                const fd = new FormData();
+                fd.append('file', this.file);
+                fd.append('width', this.width);
+                fd.append('height', this.height);
+                try { await submitTool('/image/resize', fd, `resized_${this.file.name}`); } catch(e) {}
+                this.loading = false;
+            }
+        };
+    }
+    </script>
+</body>
+</html>

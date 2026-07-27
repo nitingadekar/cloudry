@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Converter - Cloudry</title>
+    <meta name="description" content="Convert colors between HEX, RGB, and HSL formats online for free.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2"><span class="text-2xl">☁️</span><span class="text-xl font-bold text-gray-800">Cloudry</span></a>
+            <a href="/" class="text-sm text-blue-600 hover:underline">← All Tools</a>
+        </div>
+    </header>
+
+    <main class="max-w-2xl mx-auto px-4 py-12" x-data="colorConverter()">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">🎨 Color Converter</h1>
+        <p class="text-gray-600 mb-8">Convert colors between HEX, RGB, and HSL formats.</p>
+
+        <div class="bg-white rounded-xl border p-6">
+            <!-- Color Picker -->
+            <div class="flex items-center gap-4 mb-6">
+                <input type="color" x-model="pickerColor" @input="fromPicker()" class="w-16 h-16 rounded-lg cursor-pointer border-0">
+                <div>
+                    <p class="text-sm text-gray-500">Pick a color or enter below</p>
+                    <p class="font-mono text-lg font-bold" x-text="pickerColor"></p>
+                </div>
+            </div>
+
+            <!-- Input -->
+            <label class="block text-sm font-medium text-gray-700 mb-1">Color value</label>
+            <input type="text" x-model="input" placeholder="#ff5733 or rgb(255,87,51) or hsl(11,100,60)"
+                   @input="convert()"
+                   class="w-full border border-gray-300 rounded-lg px-4 py-2 font-mono focus:ring-2 focus:ring-blue-500">
+
+            <!-- Preview -->
+            <div x-show="hex" class="mt-6">
+                <div class="w-full h-20 rounded-lg border" :style="`background-color: ${hex}`"></div>
+                
+                <div class="mt-4 space-y-3">
+                    <div class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2">
+                        <span class="text-sm font-medium text-gray-600">HEX</span>
+                        <code class="font-mono cursor-pointer hover:text-blue-600" x-text="hex" @click="copy(hex)"></code>
+                    </div>
+                    <div class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2">
+                        <span class="text-sm font-medium text-gray-600">RGB</span>
+                        <code class="font-mono cursor-pointer hover:text-blue-600" x-text="rgb" @click="copy(rgb)"></code>
+                    </div>
+                    <div class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2">
+                        <span class="text-sm font-medium text-gray-600">HSL</span>
+                        <code class="font-mono cursor-pointer hover:text-blue-600" x-text="hsl" @click="copy(hsl)"></code>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2" x-text="copied ? '✓ Copied to clipboard!' : 'Click any value to copy'"></p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-16 py-8 text-center text-sm text-gray-500"><p>🔒 Runs entirely in your browser. No data sent.</p></footer>
+    <script>
+    function colorConverter() {
+        return {
+            input: '#ff5733',
+            pickerColor: '#ff5733',
+            hex: '#ff5733',
+            rgb: 'rgb(255, 87, 51)',
+            hsl: '',
+            copied: false,
+
+            init() { this.convert(); },
+
+            fromPicker() {
+                this.input = this.pickerColor;
+                this.convert();
+            },
+
+            convert() {
+                const hex = this.parseToHex(this.input.trim());
+                if (!hex) { this.hex = ''; this.rgb = ''; this.hsl = ''; return; }
+                
+                this.hex = hex;
+                this.pickerColor = hex;
+                const [r, g, b] = this.hexToRgb(hex);
+                this.rgb = `rgb(${r}, ${g}, ${b})`;
+                
+                const [h, s, l] = this.rgbToHsl(r, g, b);
+                this.hsl = `hsl(${h}, ${s}%, ${l}%)`;
+            },
+
+            parseToHex(color) {
+                // HEX
+                let m = color.match(/^#?([0-9a-f]{6})$/i);
+                if (m) return '#' + m[1].toLowerCase();
+                // RGB
+                m = color.match(/^(?:rgb\()?\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)?$/);
+                if (m) {
+                    const [r, g, b] = [+m[1], +m[2], +m[3]];
+                    if (r <= 255 && g <= 255 && b <= 255)
+                        return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+                }
+                return null;
+            },
+
+            hexToRgb(hex) {
+                const h = hex.replace('#', '');
+                return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+            },
+
+            rgbToHsl(r, g, b) {
+                r /= 255; g /= 255; b /= 255;
+                const max = Math.max(r,g,b), min = Math.min(r,g,b);
+                let h, s, l = (max + min) / 2;
+                if (max === min) { h = s = 0; }
+                else {
+                    const d = max - min;
+                    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+                    else if (max === g) h = ((b - r) / d + 2) / 6;
+                    else h = ((r - g) / d + 4) / 6;
+                }
+                return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+            },
+
+            copy(text) {
+                navigator.clipboard.writeText(text);
+                this.copied = true;
+                setTimeout(() => this.copied = false, 2000);
+            }
+        };
+    }
+    </script>
+</body>
+</html>
