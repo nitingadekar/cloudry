@@ -4,7 +4,7 @@
 
 **Live:** https://cloudry.in  
 **API:** https://api.cloudry.in  
-**Status:** 🚧 Under Development
+**Status:** 🚧 Backend complete, Frontend complete, Deployment pending
 
 ---
 
@@ -14,11 +14,12 @@ A utility website offering 12+ free online tools:
 
 | Category | Tools |
 |----------|-------|
-| PDF | Unlock, Merge, Split, To Image, Watermark |
+| PDF | Unlock, Merge, Split, To Image, Watermark, Compress |
 | Image | To PDF, Compress, Resize, Format Convert |
-| QR | QR Code Generator |
-| Hash | MD5, SHA256 File Checksum |
+| QR | QR Code Generator (PNG/SVG) |
+| Hash | MD5, SHA1, SHA256 File Checksum |
 | Markdown | Markdown to PDF |
+| Text/Dev | JSON Formatter, Base64 Encode/Decode, Color Converter (HEX/RGB/HSL) |
 
 ## Architecture
 

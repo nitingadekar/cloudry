@@ -181,9 +181,10 @@ cloudry/
 |--------|----------|-------------|-------|--------|
 | POST | `/api/v1/pdf/unlock` | Remove PDF restrictions | PDF file + password (optional) | PDF file |
 | POST | `/api/v1/pdf/merge` | Merge multiple PDFs | Multiple PDF files | PDF file |
-| POST | `/api/v1/pdf/split` | Split PDF by pages | PDF file + page range | ZIP of PDFs |
+| POST | `/api/v1/pdf/split` | Split PDF by pages | PDF file + page range | PDF file |
 | POST | `/api/v1/pdf/to-image` | Convert PDF to images | PDF file + format | ZIP of images |
 | POST | `/api/v1/pdf/watermark` | Add watermark to PDF | PDF file + watermark text | PDF file |
+| POST | `/api/v1/pdf/compress` | Compress PDF file size | PDF file | PDF file |
 | POST | `/api/v1/image/to-pdf` | Convert images to PDF | Image files | PDF file |
 | POST | `/api/v1/image/compress` | Compress image | Image file + quality | Image file |
 | POST | `/api/v1/image/resize` | Resize image | Image file + dimensions | Image file |
@@ -191,6 +192,11 @@ cloudry/
 | POST | `/api/v1/qr/generate` | Generate QR code | Text/URL + options | PNG/SVG file |
 | POST | `/api/v1/hash/calculate` | Calculate file hash | File | JSON with hashes |
 | POST | `/api/v1/markdown/to-pdf` | Convert markdown to PDF | Markdown text | PDF file |
+| POST | `/api/v1/text/base64/encode` | Encode to Base64 | Text or file | JSON |
+| POST | `/api/v1/text/base64/decode` | Decode from Base64 | Base64 string | JSON |
+| POST | `/api/v1/text/json/format` | Pretty-print JSON | JSON string | JSON |
+| POST | `/api/v1/text/json/validate` | Validate JSON | JSON string | JSON |
+| POST | `/api/v1/text/color/convert` | Convert color format | Color + target format | JSON |
 | GET | `/health` | Health check | — | JSON status |
 
 ### Common Headers
