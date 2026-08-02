@@ -67,6 +67,14 @@ async function submitToolJson(endpoint, formData) {
 }
 
 function downloadBlob(blob, filename, contentType) {
+    // Try native download for mobile compatibility
+    if (navigator.userAgent.match(/iPhone|iPad|Android/i)) {
+        // Mobile: open in new tab (allows save via long-press or share)
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        return;
+    }
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
