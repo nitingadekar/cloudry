@@ -5,7 +5,7 @@
 
 const API_BASE = window.location.hostname === 'localhost' 
     ? 'http://localhost:8000/api/v1'
-    : 'https://cloudry-api.onrender.com/api/v1';
+    : 'https://api.cloudry.in/api/v1';
 
 /**
  * Submit a form with files to the API and trigger download of the result.
