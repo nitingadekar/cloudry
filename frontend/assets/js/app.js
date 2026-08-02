@@ -41,6 +41,7 @@ async function submitTool(endpoint, formData, outputFilename) {
         const blob = await response.blob();
         downloadBlob(blob, outputFilename || 'output', contentType);
         setStatus('success', `Done! File downloaded (${formatSize(blob.size)})`);
+        showResetButton();
         return blob;
 
     } catch (error) {
@@ -105,6 +106,24 @@ function showJsonResult(data) {
     if (!el) return;
     el.innerHTML = `<pre class="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto">${JSON.stringify(data, null, 2)}</pre>`;
     el.classList.remove('hidden');
+    showResetButton();
+}
+
+function showResetButton() {
+    let btn = document.getElementById('reset-btn');
+    if (btn) { btn.classList.remove('hidden'); return; }
+    
+    const statusEl = document.getElementById('status');
+    if (!statusEl) return;
+    
+    btn = document.createElement('button');
+    btn.id = 'reset-btn';
+    btn.className = 'mt-4 w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 border border-gray-300 transition';
+    btn.textContent = '🔄 Convert Another File';
+    btn.onclick = function() {
+        window.location.reload();
+    };
+    statusEl.parentNode.insertBefore(btn, statusEl.nextSibling);
 }
 
 function formatSize(bytes) {
