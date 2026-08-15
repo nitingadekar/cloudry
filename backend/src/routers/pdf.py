@@ -1,10 +1,10 @@
 """PDF tool endpoints."""
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
 from src.middleware.captcha import verify_turnstile
-from src.services.pdf_service import PDFService
+from src.services.pdf_service import InvalidPDFError, PDFService
 
 router = APIRouter()
 pdf_service = PDFService()
@@ -18,7 +18,10 @@ async def unlock_pdf(file: UploadFile = File(...), password: str = Form(default=
     If the PDF requires a user password to open, you must provide it.
     """
     content = await file.read()
-    result = pdf_service.unlock(content, password)
+    try:
+        result = pdf_service.unlock(content, password)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
     return StreamingResponse(
         result,
         media_type="application/pdf",
@@ -30,7 +33,12 @@ async def unlock_pdf(file: UploadFile = File(...), password: str = Form(default=
 async def merge_pdfs(files: list[UploadFile] = File(...)):
     """Merge multiple PDF files into one."""
     contents = [await f.read() for f in files]
-    result = pdf_service.merge(contents)
+    try:
+        result = pdf_service.merge(contents)
+    except InvalidPDFError as e:
+        raise HTTPException(status_code=422, detail=e.message) from e
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
     return StreamingResponse(
         result,
         media_type="application/pdf",
@@ -45,7 +53,12 @@ async def split_pdf(file: UploadFile = File(...), pages: str = Form(...)):
     Pages format: "1-3,5,7-9" — extracts specified pages into a new PDF.
     """
     content = await file.read()
-    result = pdf_service.split(content, pages)
+    try:
+        result = pdf_service.split(content, pages)
+    except InvalidPDFError as e:
+        raise HTTPException(status_code=422, detail=e.message) from e
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
     return StreamingResponse(
         result,
         media_type="application/pdf",
@@ -60,7 +73,12 @@ async def pdf_to_image(file: UploadFile = File(...), format: str = Form(default=
     Returns a ZIP file containing one image per page.
     """
     content = await file.read()
-    result = pdf_service.to_images(content, format)
+    try:
+        result = pdf_service.to_images(content, format)
+    except InvalidPDFError as e:
+        raise HTTPException(status_code=422, detail=e.message) from e
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
     return StreamingResponse(
         result,
         media_type="application/zip",
@@ -72,7 +90,10 @@ async def pdf_to_image(file: UploadFile = File(...), format: str = Form(default=
 async def add_watermark(file: UploadFile = File(...), text: str = Form(...)):
     """Add a text watermark to every page of a PDF."""
     content = await file.read()
-    result = pdf_service.add_watermark(content, text)
+    try:
+        result = pdf_service.add_watermark(content, text)
+    except InvalidPDFError as e:
+        raise HTTPException(status_code=422, detail=e.message) from e
     return StreamingResponse(
         result,
         media_type="application/pdf",
@@ -84,7 +105,10 @@ async def add_watermark(file: UploadFile = File(...), text: str = Form(...)):
 async def compress_pdf(file: UploadFile = File(...)):
     """Compress a PDF to reduce file size."""
     content = await file.read()
-    result = pdf_service.compress(content)
+    try:
+        result = pdf_service.compress(content)
+    except InvalidPDFError as e:
+        raise HTTPException(status_code=422, detail=e.message) from e
     return StreamingResponse(
         result,
         media_type="application/pdf",
