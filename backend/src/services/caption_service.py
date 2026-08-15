@@ -200,7 +200,16 @@ Respond with ONLY the JSON object. No explanation, no markdown, no extra text.""
         text = raw_text.strip()
 
         # Strip <think>...</think> blocks (Qwen chain-of-thought)
+        # Handle both closed </think> and unclosed <think> blocks
         text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+        # If unclosed <think> remains (model didn't close it), strip everything from <think> to first {
+        if "<think>" in text:
+            think_end = text.find("{")
+            if think_end > 0:
+                text = text[think_end:]
+            else:
+                # No JSON found at all, strip think tag and hope for the best
+                text = re.sub(r"<think>.*", "", text, flags=re.DOTALL).strip()
 
         # Strip any markdown code fences the model might add
         if text.startswith("```"):

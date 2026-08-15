@@ -116,6 +116,13 @@ class TestCaptionServiceHelpers:
         assert len(result["captions"]) == 3
         assert "No filter needed" in result["captions"][0]
 
+    def test_parse_response_strips_unclosed_think_block(self):
+        """Qwen sometimes doesn't close the think block for non-English."""
+        service = CaptionService()
+        raw = '<think>\nThe user wants 3 captions in Marathi.\nThe captions must be sarcastic.\n{"captions": ["मला काय फरक पडतो 😏", "हे बघा कोणाला सांगू नका 🤫", "आयुष्य म्हणजे एक ड्रामा 🎭"]}'
+        result = service._parse_response(raw, "sarcastic", "Marathi")
+        assert len(result["captions"]) == 3
+
     def test_parse_response_partial_format(self):
         service = CaptionService()
         raw = '{"captions": ["Living my best nine lives 🐱"]}'
