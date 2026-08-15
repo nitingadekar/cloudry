@@ -87,30 +87,22 @@
         <!-- Results -->
         <div x-show="captions.length > 0" x-cloak class="mt-6 space-y-4">
             <div class="bg-white rounded-xl shadow-sm border p-6">
-                <p class="text-sm text-gray-500 mb-4" x-show="description">
-                    🖼️ <span x-text="description"></span>
-                </p>
-                <h2 class="text-lg font-semibold text-gray-800 mb-3">Your Captions <span class="text-sm font-normal text-gray-500" x-text="'(' + theme + ' vibe)'"></span></h2>
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">Your Captions <span class="text-sm font-normal text-purple-600" x-text="'(' + theme + ')'"></span></h2>
                 <div class="space-y-3">
                     <template x-for="(caption, index) in captions" :key="index">
-                        <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg group hover:bg-purple-50 transition">
-                            <span class="text-lg" x-text="['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣'][index]"></span>
-                            <p class="flex-1 text-gray-800" x-text="caption"></p>
+                        <div class="relative p-4 bg-gray-50 rounded-lg border border-gray-200 group hover:border-purple-300 transition">
+                            <p class="text-gray-800 pr-16 leading-relaxed" x-text="caption"></p>
                             <button @click="copyCaption(caption, index)"
-                                    class="shrink-0 text-sm px-3 py-1 rounded-md bg-white border border-gray-200 hover:bg-purple-100 hover:border-purple-300 transition"
-                                    :class="{ 'bg-green-100 border-green-300': copied === index }">
-                                <span x-text="copied === index ? '✓ Copied' : '📋 Copy'"></span>
+                                    class="absolute top-3 right-3 text-sm px-3 py-1.5 rounded-md bg-white border border-gray-200 hover:bg-purple-100 hover:border-purple-300 transition shadow-sm"
+                                    :class="{ 'bg-green-100 border-green-300 text-green-700': copied === index }">
+                                <span x-text="copied === index ? '✓ Copied!' : '📋 Copy'"></span>
                             </button>
                         </div>
                     </template>
                 </div>
             </div>
 
-            <!-- Try Again -->
-            <button @click="regenerate()" :disabled="loading"
-                    class="w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 border border-gray-300 transition">
-                🔄 Generate More Captions
-            </button>
+            <p class="text-center text-sm text-gray-500">Upload a new image to generate more captions</p>
         </div>
     </main>
 
@@ -130,7 +122,6 @@
             language: 'English',
             loading: false,
             error: '',
-            description: '',
             captions: [],
             copied: null,
             themes: [
@@ -179,7 +170,6 @@
                 formData.append('file', this.file);
                 formData.append('theme', this.theme);
                 formData.append('language', this.language);
-                formData.append('count', '3');
 
                 try {
                     const response = await fetch(`${API_BASE}/caption/generate`, {
@@ -193,17 +183,12 @@
                     }
 
                     const data = await response.json();
-                    this.description = data.description || '';
                     this.captions = data.captions || [];
                 } catch (e) {
                     this.error = e.message;
                 }
 
                 this.loading = false;
-            },
-
-            regenerate() {
-                this.generate();
             },
 
             async copyCaption(text, index) {

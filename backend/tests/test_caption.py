@@ -88,14 +88,10 @@ class TestCaptionServiceHelpers:
 
     def test_parse_response_standard_format(self):
         service = CaptionService()
-        raw = """DESCRIPTION: A sunset over the ocean with golden reflections
-CAPTION 1: Chasing sunsets and losing track of time 🌅
-CAPTION 2: The sky painted itself just for us tonight ✨
-CAPTION 3: Golden hour never looked this good 🔥"""
+        raw = '{"captions": ["Chasing sunsets and losing track of time 🌅", "The sky painted itself just for us tonight ✨", "Golden hour never looked this good 🔥"]}'
         result = service._parse_response(raw, "aesthetic", "English")
-        assert result["description"] == "A sunset over the ocean with golden reflections"
         assert len(result["captions"]) == 3
-        assert "sunset" in result["captions"][0].lower() or "🌅" in result["captions"][0]
+        assert "🌅" in result["captions"][0]
         assert result["theme"] == "aesthetic"
         assert result["language"] == "English"
 
@@ -107,12 +103,16 @@ CAPTION 3: Golden hour never looked this good 🔥"""
         assert len(result["captions"]) == 1
         assert result["captions"][0] == raw.strip()
 
+    def test_parse_response_with_markdown_fences(self):
+        service = CaptionService()
+        raw = '```json\n{"captions": ["Caption one 🎉", "Caption two ✨", "Caption three 🔥"]}\n```'
+        result = service._parse_response(raw, "funny", "English")
+        assert len(result["captions"]) == 3
+
     def test_parse_response_partial_format(self):
         service = CaptionService()
-        raw = """DESCRIPTION: A cat sitting on a windowsill
-CAPTION 1: Living my best nine lives 🐱"""
+        raw = '{"captions": ["Living my best nine lives 🐱"]}'
         result = service._parse_response(raw, "funny", "English")
-        assert result["description"] == "A cat sitting on a windowsill"
         assert len(result["captions"]) == 1
 
 
@@ -151,10 +151,7 @@ class TestCaptionServiceGeneration:
 
         mock_response = MagicMock()
         mock_response.choices = [MagicMock()]
-        mock_response.choices[0].message.content = """DESCRIPTION: A beautiful mountain landscape
-CAPTION 1: On top of the world 🏔️
-CAPTION 2: Mountains calling and I must go ⛰️
-CAPTION 3: Higher than my expectations 🚀"""
+        mock_response.choices[0].message.content = '{"captions": ["On top of the world 🏔️", "Mountains calling and I must go ⛰️", "Higher than my expectations 🚀"]}'
         mock_client.chat.completions.create.return_value = mock_response
 
         service = CaptionService()
@@ -167,10 +164,10 @@ CAPTION 3: Higher than my expectations 🚀"""
             count=3,
         )
 
-        assert result["description"] == "A beautiful mountain landscape"
         assert len(result["captions"]) == 3
         assert result["theme"] == "travel"
         assert result["language"] == "English"
+        assert "description" not in result
         mock_client.chat.completions.create.assert_called_once()
 
     @patch("src.services.caption_service.Groq")
@@ -282,7 +279,6 @@ class TestCaptionEndpoints:
     @patch("src.routers.caption.caption_service")
     def test_generate_success(self, mock_service, test_client):
         mock_service.generate_captions.return_value = {
-            "description": "A test image",
             "captions": ["Caption 1 ✨", "Caption 2 🔥", "Caption 3 💫"],
             "theme": "catchy",
             "language": "English",
@@ -292,9 +288,10 @@ class TestCaptionEndpoints:
         resp = test_client.post(
             "/api/v1/caption/generate",
             files={"file": ("test.jpg", content, "image/jpeg")},
-            data={"theme": "catchy", "language": "English", "count": "3"},
+            data={"theme": "catchy", "language": "English"},
         )
         assert resp.status_code == 200
         data = resp.json()
         assert len(data["captions"]) == 3
         assert data["theme"] == "catchy"
+        assert "description" not in data
