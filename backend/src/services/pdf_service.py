@@ -5,6 +5,7 @@ import zipfile
 
 import pikepdf
 from pypdf import PdfReader, PdfWriter
+from pypdf.errors import PdfReadError
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
@@ -13,8 +14,60 @@ from src.logging_config import get_logger
 logger = get_logger("pdf_service")
 
 
+class InvalidPDFError(Exception):
+    """Raised when the uploaded file is not a valid or readable PDF."""
+
+    def __init__(self, message: str = "Please upload a valid PDF file."):
+        self.message = message
+        super().__init__(self.message)
+
+
 class PDFService:
     """Handles all PDF-related operations."""
+
+    @staticmethod
+    def validate_pdf(content: bytes) -> None:
+        """Validate that content is a readable, non-encrypted PDF.
+
+        Raises InvalidPDFError if the file is:
+        - Empty or too small to be a PDF
+        - Not a valid PDF (wrong magic bytes or corrupt structure)
+        - Password-protected / encrypted (for operations that require reading pages)
+        """
+        if not content or len(content) < 8:
+            raise InvalidPDFError("The uploaded file is empty or too small to be a valid PDF.")
+
+        # Check PDF magic bytes (%PDF-)
+        if not content[:5] == b"%PDF-":
+            raise InvalidPDFError(
+                "The uploaded file is not a valid PDF. Please upload a proper PDF file."
+            )
+
+        # Try to open and read with pypdf to detect corruption or encryption
+        try:
+            reader = PdfReader(io.BytesIO(content))
+            if reader.is_encrypted:
+                raise InvalidPDFError(
+                    "This PDF is password-protected. Please unlock it first or use the PDF Unlock tool."
+                )
+            # Access pages to confirm the PDF structure is readable
+            _ = len(reader.pages)
+        except InvalidPDFError:
+            raise
+        except PdfReadError as e:
+            logger.warning("PDF validation failed (corrupt)", extra={"error": str(e)})
+            raise InvalidPDFError(
+                "The uploaded file appears to be corrupted and cannot be read. "
+                "Please upload a valid PDF file."
+            ) from e
+        except Exception as e:
+            error_msg = str(e).lower()
+            if "encrypt" in error_msg or "password" in error_msg or "cryptography" in error_msg:
+                raise InvalidPDFError(
+                    "This PDF is password-protected. Please unlock it first or use the PDF Unlock tool."
+                ) from e
+            logger.warning("PDF validation failed (unexpected)", extra={"error": str(e)})
+            raise InvalidPDFError("Please upload a valid PDF file.") from e
 
     def unlock(self, content: bytes, password: str = "") -> io.BytesIO:
         """Remove password restrictions from a PDF.
@@ -41,6 +94,12 @@ class PDFService:
         if len(contents) < 2:
             raise ValueError("At least 2 PDF files are required for merging")
 
+        for i, content in enumerate(contents, 1):
+            try:
+                self.validate_pdf(content)
+            except InvalidPDFError as e:
+                raise InvalidPDFError(f"File {i}: {e.message}") from e
+
         writer = PdfWriter()
         for content in contents:
             reader = PdfReader(io.BytesIO(content))
@@ -58,6 +117,7 @@ class PDFService:
 
         Pages format: "1-3,5,7-9" — page numbers are 1-indexed.
         """
+        self.validate_pdf(content)
         reader = PdfReader(io.BytesIO(content))
         total_pages = len(reader.pages)
         page_indices = self._parse_page_ranges(pages, total_pages)
@@ -74,6 +134,7 @@ class PDFService:
 
     def to_images(self, content: bytes, format: str = "png") -> io.BytesIO:
         """Convert PDF pages to images, returned as a ZIP file."""
+        self.validate_pdf(content)
         from pdf2image import convert_from_bytes
 
         format = format.lower()
@@ -97,6 +158,7 @@ class PDFService:
 
     def add_watermark(self, content: bytes, text: str) -> io.BytesIO:
         """Add a diagonal text watermark to every page of a PDF."""
+        self.validate_pdf(content)
         # Create watermark PDF
         watermark_buffer = io.BytesIO()
         c = canvas.Canvas(watermark_buffer, pagesize=letter)
@@ -129,6 +191,7 @@ class PDFService:
 
     def compress(self, content: bytes) -> io.BytesIO:
         """Compress a PDF by removing metadata and optimizing streams."""
+        self.validate_pdf(content)
         pdf = pikepdf.open(io.BytesIO(content))
 
         # Remove metadata to reduce size
