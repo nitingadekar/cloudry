@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     # File limits
     max_file_size_mb: int = 20
 
+    # Groq API (Caption Generator)
+    groq_api_key: str = ""
+
     # Logging
     log_level: str = "info"
 
