@@ -239,6 +239,46 @@ class TestCaptionEndpoints:
         assert resp.status_code == 422
         assert "Invalid theme" in resp.json()["detail"]
 
+    def test_generate_graceful_when_api_key_missing(self, test_client):
+        """When GROQ_API_KEY is not configured, endpoint should return 503 not 500."""
+        content = _create_test_image()
+        with patch("src.routers.caption.caption_service") as mock_service:
+            mock_service.generate_captions.side_effect = ValueError("GROQ_API_KEY is not configured")
+            resp = test_client.post(
+                "/api/v1/caption/generate",
+                files={"file": ("test.jpg", content, "image/jpeg")},
+                data={"theme": "catchy", "language": "English"},
+            )
+        # ValueError with "api_key" in message should be caught and return 422
+        assert resp.status_code == 422
+        assert "GROQ_API_KEY" in resp.json()["detail"]
+
+    def test_generate_returns_503_on_auth_error(self, test_client):
+        """When Groq API rejects the key, return 503 service unavailable."""
+        content = _create_test_image()
+        with patch("src.routers.caption.caption_service") as mock_service:
+            mock_service.generate_captions.side_effect = Exception("authentication failed: invalid api_key")
+            resp = test_client.post(
+                "/api/v1/caption/generate",
+                files={"file": ("test.jpg", content, "image/jpeg")},
+                data={"theme": "catchy", "language": "English"},
+            )
+        assert resp.status_code == 503
+        assert "temporarily unavailable" in resp.json()["detail"]
+
+    def test_generate_returns_429_on_rate_limit(self, test_client):
+        """When Groq rate limits us, return 429."""
+        content = _create_test_image()
+        with patch("src.routers.caption.caption_service") as mock_service:
+            mock_service.generate_captions.side_effect = Exception("rate_limit_exceeded")
+            resp = test_client.post(
+                "/api/v1/caption/generate",
+                files={"file": ("test.jpg", content, "image/jpeg")},
+                data={"theme": "catchy", "language": "English"},
+            )
+        assert resp.status_code == 429
+        assert "Too many requests" in resp.json()["detail"]
+
     @patch("src.routers.caption.caption_service")
     def test_generate_success(self, mock_service, test_client):
         mock_service.generate_captions.return_value = {

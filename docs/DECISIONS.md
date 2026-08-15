@@ -150,3 +150,62 @@ Record of key decisions made for the Cloudry.in project.
 - Stripe is invite-only in India and 6%+ for domestic
 
 **Trigger:** Enable payments when daily active users > 100.
+
+---
+
+## ADR-012: Groq API for AI Caption Generator
+
+**Decision:** Use Groq API (Llama 4 Scout multimodal) for the AI caption generator.
+
+**Context:** The caption generator needs two capabilities: (1) understand image content, and (2) generate creative text. We need a free, fast, multimodal API.
+
+**Alternatives considered:**
+- **Google Gemini Flash:** Free tier (250 req/day) — lower quota than Groq
+- **Hugging Face Inference API (BLIP-2) + separate LLM:** Two API calls, more latency
+- **OpenAI GPT-4 Vision:** No free tier, expensive
+- **Self-hosted models (BLIP/Moondream):** Impossible on Render free tier (512MB RAM limit)
+- **Moondream Cloud:** $5 free credits/month, but smaller model, less creative
+
+**Why Groq:**
+- Single API call handles both vision + text generation (Llama 4 Scout is natively multimodal)
+- Free tier: ~30 RPM, ~1000 RPD (no credit card needed)
+- Blazing fast: ~500 tokens/second on LPU hardware
+- OpenAI-compatible API format (easy to swap providers later)
+- Generous enough for ~300-500 daily users
+
+**Fallback plan:** If Groq changes free tier, switch to Gemini 2.5 Flash (same multimodal capability, 250 req/day free). Both keys can be configured simultaneously.
+
+**Cost projection:**
+- Free tier: $0 (up to ~1000 req/day)
+- If paid: Llama 4 Scout @ $0.18/M input tokens → 1000 requests/day ≈ $0.50/day (~₹42/day)
+
+**Trigger to upgrade:** When daily users exceed 300 or rate limit errors exceed 5% of requests.
+
+---
+
+## ADR-013: Scheduled Backend Warm-up (Cron)
+
+**Decision:** Use GitHub Actions cron to pre-warm the Render.com backend at 8:00 AM IST daily.
+
+**Context:** Render free tier sleeps apps after 15 minutes of inactivity. Indian users hitting the site in the morning face 30-second cold starts.
+
+**Implementation:** GitHub Actions workflow with `cron: '30 2 * * *'` (8:00 AM IST) hits `/health` endpoint, retries if needed, then warms up key routes.
+
+**Why not UptimeRobot/BetterUptime?** GitHub Actions is already free (2000 min/month), no additional signups needed, and we get visibility into warm-up success in the Actions tab.
+
+**Consequence:** Morning users get fast responses. Single daily cron uses ~1 minute of GitHub Actions quota.
+
+---
+
+## ADR-014: PDF Input Validation Strategy
+
+**Decision:** Validate all uploaded PDFs at service layer before processing.
+
+**Context:** Users uploading invalid files (text files renamed to .pdf, encrypted PDFs, corrupted files) caused unhandled 500 errors.
+
+**Implementation:**
+- Custom `InvalidPDFError` exception
+- `validate_pdf()` checks: magic bytes, encryption, structural integrity
+- Router catches errors and returns HTTP 422 with user-friendly messages
+
+**Consequence:** Better UX, no silent failures. Users get actionable messages like "Please upload a valid PDF file" or "This PDF is password-protected."
