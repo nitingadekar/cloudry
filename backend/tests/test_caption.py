@@ -51,8 +51,7 @@ class TestCaptionServiceHelpers:
         languages = CaptionService.get_languages()
         assert isinstance(languages, list)
         assert "English" in languages
-        assert "Hindi" in languages
-        assert "Marathi" in languages
+        assert "Hinglish" in languages
 
     def test_prepare_image_resizes_large_image(self):
         service = CaptionService()
@@ -173,13 +172,13 @@ class TestCaptionServiceGeneration:
 
         result = service.generate_captions(
             _create_test_image(),
-            theme="travel",
+            theme="catchy",
             language="English",
             count=3,
         )
 
         assert len(result["captions"]) == 3
-        assert result["theme"] == "travel"
+        assert result["theme"] == "catchy"
         assert result["language"] == "English"
         assert "description" not in result
         mock_client.chat.completions.create.assert_called_once()
@@ -220,7 +219,7 @@ class TestCaptionEndpoints:
         data = resp.json()
         assert "languages" in data
         assert "English" in data["languages"]
-        assert "Hindi" in data["languages"]
+        assert "Hinglish" in data["languages"]
 
     def test_generate_rejects_non_image(self, test_client):
         resp = test_client.post(

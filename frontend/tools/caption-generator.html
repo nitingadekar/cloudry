@@ -75,6 +75,7 @@
 
             <!-- Generate Button -->
             <button @click="generate()" :disabled="!file || loading"
+                    x-show="captions.length === 0"
                     class="mt-6 w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-6 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition shadow-md">
                 <span x-show="!loading">✨ Generate Captions</span>
                 <span x-show="loading">🧠 AI is thinking...</span>
@@ -148,15 +149,13 @@
             copied: null,
             showPayment: false,
             themes: [
-                'romantic', 'poetic', 'funny', 'sarcastic', 'badass',
-                'motivational', 'devotional', 'naughty', 'catchy', 'aesthetic',
-                'savage', 'deep', 'foodie', 'travel', 'fitness',
-                'party', 'chill', 'nostalgic', 'festive'
+                'romantic', 'funny', 'sarcastic', 'badass',
+                'motivational', 'catchy', 'savage', 'aesthetic',
+                'deep', 'chill', 'poetic', 'festive'
             ],
             languages: [
-                'English', 'Hindi', 'Marathi', 'Tamil', 'Telugu',
-                'Bengali', 'Punjabi', 'Gujarati', 'Spanish', 'French',
-                'Portuguese', 'Arabic'
+                'English', 'Hinglish', 'Marathi (Roman)',
+                'Punjabi (Roman)', 'Tamil (Roman)', 'Telugu (Roman)'
             ],
 
             handleFile(event) {

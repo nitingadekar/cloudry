@@ -14,40 +14,27 @@ logger = get_logger("caption_service")
 # Available caption themes/vibes
 THEMES = [
     "romantic",
-    "poetic",
     "funny",
     "sarcastic",
     "badass",
     "motivational",
-    "devotional",
-    "naughty",
     "catchy",
-    "aesthetic",
     "savage",
+    "aesthetic",
     "deep",
-    "foodie",
-    "travel",
-    "fitness",
-    "party",
     "chill",
-    "nostalgic",
+    "poetic",
     "festive",
 ]
 
-# Supported languages
+# Languages (all output in English phonetics / Romanized script)
 LANGUAGES = [
     "English",
-    "Hindi",
-    "Marathi",
-    "Tamil",
-    "Telugu",
-    "Bengali",
-    "Punjabi",
-    "Gujarati",
-    "Spanish",
-    "French",
-    "Portuguese",
-    "Arabic",
+    "Hinglish",
+    "Marathi (Roman)",
+    "Punjabi (Roman)",
+    "Tamil (Roman)",
+    "Telugu (Roman)",
 ]
 
 # Vision model for image understanding + caption generation
@@ -173,7 +160,12 @@ class CaptionService:
 
     def _build_prompt(self, theme: str, language: str, count: int) -> str:
         """Build the prompt for caption generation with strict guardrails."""
-        lang_part = f" in {language}" if language != "English" else ""
+        lang_part = ""
+        if language == "Hinglish":
+            lang_part = " in Hinglish (Hindi words written in English letters)"
+        elif language != "English":
+            lang_name = language.replace(" (Roman)", "")
+            lang_part = f" in {lang_name} language using English/Roman letters only"
 
         return f"""Generate 3 {theme} social media captions{lang_part} for this image. Respond ONLY with JSON: {{"captions":["c1","c2","c3"]}}"""
 
@@ -204,13 +196,14 @@ class CaptionService:
             data = json.loads(text)
             captions = data.get("captions", [])
             if isinstance(captions, list) and captions:
-                # Ensure exactly 3, truncate or pad
-                captions = [str(c) for c in captions[:3]]
-                return {
-                    "captions": captions,
-                    "theme": theme,
-                    "language": language,
-                }
+                # Filter empty strings and ensure max 3
+                captions = [str(c).strip() for c in captions if str(c).strip()][:3]
+                if captions:
+                    return {
+                        "captions": captions,
+                        "theme": theme,
+                        "language": language,
+                    }
         except (json.JSONDecodeError, TypeError, KeyError):
             pass
 
@@ -219,7 +212,7 @@ class CaptionService:
         if json_match:
             try:
                 data = json.loads(json_match.group())
-                captions = [str(c) for c in data.get("captions", [])[:3]]
+                captions = [str(c).strip() for c in data.get("captions", []) if str(c).strip()][:3]
                 if captions:
                     return {"captions": captions, "theme": theme, "language": language}
             except (json.JSONDecodeError, TypeError):
