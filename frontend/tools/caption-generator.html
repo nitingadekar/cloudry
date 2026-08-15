@@ -102,7 +102,29 @@
                 </div>
             </div>
 
-            <p class="text-center text-sm text-gray-500">Upload a new image to generate more captions</p>
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button @click="resetAll()"
+                        class="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 border border-gray-300 transition">
+                    🔄 Generate New (upload another)
+                </button>
+                <button @click="showPayment = true"
+                        class="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3 px-6 rounded-lg font-medium hover:from-amber-600 hover:to-orange-600 transition shadow-sm">
+                    ✨ Generate More (₹20)
+                </button>
+            </div>
+
+            <!-- Payment Modal -->
+            <div x-show="showPayment" x-cloak class="bg-white rounded-xl shadow-sm border p-6 text-center">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Support & Get More Captions</h3>
+                <p class="text-sm text-gray-600 mb-4">Scan the QR code to pay ₹20 via Google Pay, then upload your image again for fresh captions.</p>
+                <div class="inline-block p-3 bg-white rounded-lg border shadow-sm">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=nitingadekar41@okaxis&pn=Nitin+Gadekar&am=20&cu=INR&tn=Cloudry+Caption+Generator"
+                         alt="Pay ₹20 via UPI" class="w-48 h-48 mx-auto">
+                </div>
+                <p class="text-xs text-gray-500 mt-3">UPI ID: nitingadekar41@okaxis</p>
+                <button @click="showPayment = false" class="mt-4 text-sm text-gray-500 hover:text-gray-700 underline">Close</button>
+            </div>
         </div>
     </main>
 
@@ -124,6 +146,7 @@
             error: '',
             captions: [],
             copied: null,
+            showPayment: false,
             themes: [
                 'romantic', 'poetic', 'funny', 'sarcastic', 'badass',
                 'motivational', 'devotional', 'naughty', 'catchy', 'aesthetic',
@@ -207,6 +230,17 @@
                     this.copied = index;
                     setTimeout(() => { this.copied = null; }, 2000);
                 }
+            },
+
+            resetAll() {
+                this.file = null;
+                this.fileName = '';
+                this.preview = null;
+                this.captions = [];
+                this.error = '';
+                this.copied = null;
+                this.showPayment = false;
+                this.$refs.fileInput.value = '';
             }
         };
     }
