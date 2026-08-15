@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Caption Generator - Cloudry</title>
+    <meta name="description" content="Generate creative social media captions for your photos using AI. Choose themes like romantic, funny, badass, poetic and get Instagram-ready captions instantly.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-494WQJ79BE"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-494WQJ79BE');
+</script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="../" class="flex items-center gap-2">
+                <span class="text-2xl">☁️</span>
+                <span class="text-xl font-bold text-gray-800">Cloudry</span>
+            </a>
+            <a href="../" class="text-sm text-blue-600 hover:underline">← All Tools</a>
+        </div>
+    </header>
+
+    <main class="max-w-2xl mx-auto px-4 py-12" x-data="captionGenerator()">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">✨ AI Caption Generator</h1>
+        <p class="text-gray-600 mb-8">Upload a photo and get creative social media captions powered by AI. Pick a vibe, choose your language, and get Instagram-ready captions instantly.</p>
+
+        <div class="bg-white rounded-xl shadow-sm border p-6">
+            <!-- Image Upload -->
+            <label class="block text-sm font-medium text-gray-700 mb-2">Upload Image</label>
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition cursor-pointer"
+                 @click="$refs.fileInput.click()"
+                 @dragover.prevent="dragOver = true"
+                 @dragleave="dragOver = false"
+                 @drop.prevent="handleDrop($event)"
+                 :class="{ 'border-blue-400 bg-blue-50': dragOver }">
+                <input type="file" x-ref="fileInput" accept="image/*" @change="handleFile($event)" class="hidden">
+                <div x-show="!preview">
+                    <p class="text-4xl mb-2">📷</p>
+                    <p class="text-gray-600">Click or drag & drop your image here</p>
+                    <p class="text-xs text-gray-400 mt-1">JPEG, PNG, WebP — Max 5MB</p>
+                </div>
+                <div x-show="preview" class="relative">
+                    <img :src="preview" class="max-h-64 mx-auto rounded-lg shadow-sm">
+                    <p class="text-sm text-gray-500 mt-2" x-text="fileName"></p>
+                </div>
+            </div>
+
+            <!-- Options -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Vibe / Theme</label>
+                    <select x-model="theme" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        <template x-for="t in themes" :key="t">
+                            <option :value="t" x-text="t.charAt(0).toUpperCase() + t.slice(1)"></option>
+                        </template>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Language</label>
+                    <select x-model="language" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        <template x-for="lang in languages" :key="lang">
+                            <option :value="lang" x-text="lang"></option>
+                        </template>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Generate Button -->
+            <button @click="generate()" :disabled="!file || loading"
+                    class="mt-6 w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-6 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition shadow-md">
+                <span x-show="!loading">✨ Generate Captions</span>
+                <span x-show="loading">🧠 AI is thinking...</span>
+            </button>
+        </div>
+
+        <!-- Error -->
+        <div x-show="error" x-cloak class="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm" x-text="error"></div>
+
+        <!-- Results -->
+        <div x-show="captions.length > 0" x-cloak class="mt-6 space-y-4">
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+                <p class="text-sm text-gray-500 mb-4" x-show="description">
+                    🖼️ <span x-text="description"></span>
+                </p>
+                <h2 class="text-lg font-semibold text-gray-800 mb-3">Your Captions <span class="text-sm font-normal text-gray-500" x-text="'(' + theme + ' vibe)'"></span></h2>
+                <div class="space-y-3">
+                    <template x-for="(caption, index) in captions" :key="index">
+                        <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg group hover:bg-purple-50 transition">
+                            <span class="text-lg" x-text="['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣'][index]"></span>
+                            <p class="flex-1 text-gray-800" x-text="caption"></p>
+                            <button @click="copyCaption(caption, index)"
+                                    class="shrink-0 text-sm px-3 py-1 rounded-md bg-white border border-gray-200 hover:bg-purple-100 hover:border-purple-300 transition"
+                                    :class="{ 'bg-green-100 border-green-300': copied === index }">
+                                <span x-text="copied === index ? '✓ Copied' : '📋 Copy'"></span>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Try Again -->
+            <button @click="regenerate()" :disabled="loading"
+                    class="w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 border border-gray-300 transition">
+                🔄 Generate More Captions
+            </button>
+        </div>
+    </main>
+
+    <footer class="mt-16 py-8 text-center text-sm text-gray-500">
+        <p>🔒 Images are processed in memory and never stored. Powered by AI.</p>
+    </footer>
+
+    <script src="../assets/js/app.js"></script>
+    <script>
+    function captionGenerator() {
+        return {
+            file: null,
+            fileName: '',
+            preview: null,
+            dragOver: false,
+            theme: 'catchy',
+            language: 'English',
+            loading: false,
+            error: '',
+            description: '',
+            captions: [],
+            copied: null,
+            themes: [
+                'romantic', 'poetic', 'funny', 'sarcastic', 'badass',
+                'motivational', 'devotional', 'naughty', 'catchy', 'aesthetic',
+                'savage', 'deep', 'foodie', 'travel', 'fitness',
+                'party', 'chill', 'nostalgic', 'festive'
+            ],
+            languages: [
+                'English', 'Hindi', 'Marathi', 'Tamil', 'Telugu',
+                'Bengali', 'Punjabi', 'Gujarati', 'Spanish', 'French',
+                'Portuguese', 'Arabic'
+            ],
+
+            handleFile(event) {
+                const f = event.target.files[0];
+                if (f) this.setFile(f);
+            },
+
+            handleDrop(event) {
+                this.dragOver = false;
+                const f = event.dataTransfer.files[0];
+                if (f && f.type.startsWith('image/')) this.setFile(f);
+            },
+
+            setFile(f) {
+                if (f.size > 5 * 1024 * 1024) {
+                    this.error = 'Image must be under 5MB.';
+                    return;
+                }
+                this.file = f;
+                this.fileName = f.name;
+                this.preview = URL.createObjectURL(f);
+                this.error = '';
+                this.captions = [];
+            },
+
+            async generate() {
+                if (!this.file) return;
+                this.loading = true;
+                this.error = '';
+                this.captions = [];
+                this.copied = null;
+
+                const formData = new FormData();
+                formData.append('file', this.file);
+                formData.append('theme', this.theme);
+                formData.append('language', this.language);
+                formData.append('count', '3');
+
+                try {
+                    const response = await fetch(`${API_BASE}/caption/generate`, {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    if (!response.ok) {
+                        const err = await response.json().catch(() => ({ detail: 'Unknown error' }));
+                        throw new Error(err.detail || `Error ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    this.description = data.description || '';
+                    this.captions = data.captions || [];
+                } catch (e) {
+                    this.error = e.message;
+                }
+
+                this.loading = false;
+            },
+
+            regenerate() {
+                this.generate();
+            },
+
+            async copyCaption(text, index) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    this.copied = index;
+                    setTimeout(() => { this.copied = null; }, 2000);
+                } catch (e) {
+                    // Fallback for older browsers
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    this.copied = index;
+                    setTimeout(() => { this.copied = null; }, 2000);
+                }
+            }
+        };
+    }
+    </script>
+</body>
+</html>
