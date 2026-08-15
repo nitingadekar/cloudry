@@ -21,9 +21,14 @@
 - [x] PDF input validation (friendly errors for invalid/encrypted files)
 
 ### Phase 1.5: AI Feature
-- [x] AI Caption Generator (Groq API, Llama 4 Scout multimodal)
-- [x] 19 themes, 12 languages
+- [x] AI Caption Generator (Groq API, Qwen 3.6 27B multimodal)
+- [x] 12 themes, 6 languages (Romanized script)
 - [x] Backend warm-up workflow (8am IST daily cron)
+- [x] Prompt guardrails (ignore image text injection, safety filters)
+- [x] One-shot generation per upload (prevents API abuse)
+- [x] UPI payment integration for premium regeneration (₹20)
+
+> **Code frozen: 2026-08-15** — Stabilization complete. Next focus: marketing & traffic.
 
 ---
 
@@ -81,6 +86,7 @@
 
 ## 🏗️ Technical Debt & Improvements
 
+- [ ] Replace Tailwind CDN with pre-compiled CSS (suppress console warning, improve load performance)
 - [ ] Redis for rate limiting (currently in-memory, resets on deploy)
 - [ ] Structured error responses (standardize error JSON format)
 - [ ] Request ID tracking (correlation across logs)
