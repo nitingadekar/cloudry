@@ -51,7 +51,7 @@ LANGUAGES = [
 ]
 
 # Vision model for image understanding + caption generation
-VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
+VISION_MODEL = "qwen/qwen3.6-27b"
 
 
 class CaptionService:
