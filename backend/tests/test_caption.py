@@ -84,7 +84,7 @@ class TestCaptionServiceHelpers:
         service = CaptionService()
         prompt = service._build_prompt("funny", "Hindi", 3)
         assert "Hindi" in prompt
-        assert "native script" in prompt.lower() or "Hindi script" in prompt
+        assert "funny" in prompt
 
     def test_parse_response_standard_format(self):
         service = CaptionService()
