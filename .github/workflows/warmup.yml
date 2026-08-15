@@ -1,0 +1,35 @@
+name: Backend Warm-up
+
+# Pre-warm Render.com free tier backend to avoid cold starts for morning users (India)
+# 8:00 AM IST = 2:30 AM UTC
+on:
+  schedule:
+    - cron: '30 2 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  warmup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake up backend
+        run: |
+          echo "🔥 Warming up Cloudry API at $(date -u)"
+          
+          # Hit health endpoint to wake up the Render instance
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.cloudry.in/health)
+          echo "Health check: HTTP $HTTP_STATUS"
+          
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "⏳ Cold start detected, waiting 30s and retrying..."
+            sleep 30
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.cloudry.in/health)
+            echo "Retry health check: HTTP $HTTP_STATUS"
+          fi
+          
+          # Hit a few endpoints to warm up the service workers
+          echo "Warming up routes..."
+          curl -s -o /dev/null https://api.cloudry.in/_admin/health/readiness
+          curl -s -o /dev/null https://api.cloudry.in/api/v1/caption/themes
+          curl -s -o /dev/null https://api.cloudry.in/api/v1/caption/languages
+          
+          echo "✅ Backend warm-up complete"

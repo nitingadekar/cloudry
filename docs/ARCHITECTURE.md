@@ -65,6 +65,7 @@ Cloudry.in is a free online utility website offering PDF, image, and file tools.
 | Logging | python-json-logger (structured) | Pexa standard |
 | ASGI server | uvicorn | Production-ready |
 | File uploads | python-multipart | Required by FastAPI |
+| AI/Vision | Groq SDK (Llama 4 Scout) | Multimodal caption generation, free tier |
 
 ### Frontend
 
@@ -109,14 +110,16 @@ cloudry/
 │   │   │   ├── image.py           # Image tool endpoints
 │   │   │   ├── qr.py              # QR code endpoints
 │   │   │   ├── hash.py            # Hash calculator endpoints
-│   │   │   └── markdown.py        # Markdown→PDF endpoints
+│   │   │   ├── markdown.py        # Markdown→PDF endpoints
+│   │   │   └── caption.py         # AI caption generator endpoints
 │   │   └── services/
 │   │       ├── __init__.py
 │   │       ├── pdf_service.py     # pikepdf, pypdf, pdf2image logic
 │   │       ├── image_service.py   # Pillow, img2pdf logic
 │   │       ├── qr_service.py      # qrcode generation
 │   │       ├── hash_service.py    # hashlib operations
-│   │       └── markdown_service.py # weasyprint conversion
+│   │       ├── markdown_service.py # weasyprint conversion
+│   │       └── caption_service.py # Groq multimodal AI captions
 │   ├── tests/
 │   │   ├── __init__.py
 │   │   ├── conftest.py            # Shared fixtures
@@ -146,7 +149,8 @@ cloudry/
 │   │   ├── qr-generator.html
 │   │   ├── file-hash.html
 │   │   ├── markdown-to-pdf.html
-│   │   └── image-resize.html
+│   │   ├── image-resize.html
+│   │   └── caption-generator.html
 │   ├── assets/
 │   │   ├── css/
 │   │   │   └── style.css         # Custom styles (minimal)
@@ -162,7 +166,8 @@ cloudry/
 │   ├── workflows/
 │   │   ├── ci.yml                 # Lint, test, coverage
 │   │   ├── cd-backend.yml         # Deploy backend to Render
-│   │   └── cd-frontend.yml        # Deploy frontend to GitHub Pages
+│   │   ├── cd-frontend.yml        # Deploy frontend to GitHub Pages
+│   │   └── warmup.yml             # Scheduled 8AM IST backend pre-warming
 │   └── pull_request_template.md
 ├── Makefile                       # Top-level orchestration
 ├── README.md
@@ -197,6 +202,9 @@ cloudry/
 | POST | `/api/v1/text/json/format` | Pretty-print JSON | JSON string | JSON |
 | POST | `/api/v1/text/json/validate` | Validate JSON | JSON string | JSON |
 | POST | `/api/v1/text/color/convert` | Convert color format | Color + target format | JSON |
+| POST | `/api/v1/caption/generate` | Generate AI captions for image | Image file + theme + language | JSON (captions) |
+| GET | `/api/v1/caption/themes` | List available caption themes | — | JSON |
+| GET | `/api/v1/caption/languages` | List supported languages | — | JSON |
 | GET | `/health` | Health check | — | JSON status |
 
 ### Common Headers
