@@ -109,6 +109,14 @@ class CaptionService:
             model=VISION_MODEL,
             messages=[
                 {
+                    "role": "system",
+                    "content": (
+                        "You are a JSON-only caption generator. You MUST respond with ONLY a valid JSON object. "
+                        "No thinking, no explanation, no markdown, no extra text before or after the JSON. "
+                        "Format: {\"captions\": [\"caption1\", \"caption2\", \"caption3\"]}"
+                    ),
+                },
+                {
                     "role": "user",
                     "content": [
                         {
@@ -187,9 +195,14 @@ Respond with ONLY the JSON object. No explanation, no markdown, no extra text.""
     def _parse_response(self, raw_text: str, theme: str, language: str) -> dict:
         """Parse the AI JSON response into structured data."""
         import json
+        import re
+
+        text = raw_text.strip()
+
+        # Strip <think>...</think> blocks (Qwen chain-of-thought)
+        text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
         # Strip any markdown code fences the model might add
-        text = raw_text.strip()
         if text.startswith("```"):
             text = text.split("\n", 1)[-1]  # Remove first line
             if text.endswith("```"):

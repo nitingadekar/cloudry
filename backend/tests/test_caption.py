@@ -109,6 +109,13 @@ class TestCaptionServiceHelpers:
         result = service._parse_response(raw, "funny", "English")
         assert len(result["captions"]) == 3
 
+    def test_parse_response_strips_think_blocks(self):
+        service = CaptionService()
+        raw = '<think>\nThe user wants captions for a sunset image.\nLet me generate 3 savage captions.\n</think>\n{"captions": ["No filter needed 🔥", "Sky is showing off again 💅", "Even the sun is jealous ☀️"]}'
+        result = service._parse_response(raw, "savage", "English")
+        assert len(result["captions"]) == 3
+        assert "No filter needed" in result["captions"][0]
+
     def test_parse_response_partial_format(self):
         service = CaptionService()
         raw = '{"captions": ["Living my best nine lives 🐱"]}'
