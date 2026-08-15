@@ -20,7 +20,7 @@ def _create_test_pdf(num_pages: int = 3) -> bytes:
     return buffer.getvalue()
 
 
-def _create_encrypted_pdf(password: str = "secret") -> bytes:
+def _create_encrypted_pdf(password: str = "secret") -> bytes:  # noqa: S107
     """Create a password-protected test PDF."""
     buffer = io.BytesIO()
     pdf = pikepdf.new()
