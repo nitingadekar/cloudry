@@ -1,7 +1,8 @@
-"""Text utility service — Base64, JSON, and Color conversion."""
+"""Text utility service — Base64, JSON, Color conversion, and Diff."""
 
 import base64
 import colorsys
+import difflib
 import json
 import re
 
@@ -103,3 +104,79 @@ class TextService:
             return int(r * 255), int(g * 255), int(b * 255)
 
         raise ValueError(f"Cannot parse color: {color}. Use hex (#ff5733), rgb (255,87,51), or hsl (11,100,60).")
+
+    # ── Diff ───────────────────────────────────────────────────────────────────
+
+    def diff_texts(self, text1: str, text2: str, context_lines: int = 3) -> dict:
+        """Compare two texts and return structured diff output.
+
+        Args:
+            text1: Original text (left side)
+            text2: Modified text (right side)
+            context_lines: Number of surrounding context lines (default 3)
+
+        Returns:
+            dict with unified diff, stats, and line-by-line changes
+        """
+        lines1 = text1.splitlines()
+        lines2 = text2.splitlines()
+
+        # Generate unified diff (needs \n terminated lines)
+        lines1_terminated = [line + "\n" for line in lines1]
+        lines2_terminated = [line + "\n" for line in lines2]
+        unified = list(
+            difflib.unified_diff(
+                lines1_terminated,
+                lines2_terminated,
+                fromfile="Original",
+                tofile="Modified",
+                n=context_lines,
+            )
+        )
+
+        # Generate line-by-line changes for frontend rendering
+        changes = []
+        matcher = difflib.SequenceMatcher(None, lines1, lines2)
+        for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+            if tag == "equal":
+                for line in lines1[i1:i2]:
+                    changes.append({"type": "equal", "content": line})
+            elif tag == "delete":
+                for line in lines1[i1:i2]:
+                    changes.append({"type": "removed", "content": line})
+            elif tag == "insert":
+                for line in lines2[j1:j2]:
+                    changes.append({"type": "added", "content": line})
+            elif tag == "replace":
+                for line in lines1[i1:i2]:
+                    changes.append({"type": "removed", "content": line})
+                for line in lines2[j1:j2]:
+                    changes.append({"type": "added", "content": line})
+
+        # Calculate stats
+        added = sum(1 for c in changes if c["type"] == "added")
+        removed = sum(1 for c in changes if c["type"] == "removed")
+        unchanged = sum(1 for c in changes if c["type"] == "equal")
+
+        # Similarity ratio
+        ratio = difflib.SequenceMatcher(None, text1, text2).ratio()
+
+        result = {
+            "unified_diff": "".join(unified),
+            "changes": changes,
+            "stats": {
+                "added": added,
+                "removed": removed,
+                "unchanged": unchanged,
+                "total_lines_original": len(lines1),
+                "total_lines_modified": len(lines2),
+                "similarity": round(ratio * 100, 1),
+            },
+            "identical": text1 == text2,
+        }
+
+        logger.info(
+            "Diff computed",
+            extra={"added": added, "removed": removed, "similarity": f"{ratio * 100:.1f}%"},
+        )
+        return result

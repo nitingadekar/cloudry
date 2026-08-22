@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diff Checker - Cloudry</title>
+    <meta name="description" content="Compare two texts online and see the differences highlighted. Free diff checker tool with no signup required.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-494WQJ79BE"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-494WQJ79BE');
+</script>
+<style>
+    .diff-line { font-family: 'Courier New', monospace; font-size: 13px; padding: 2px 8px; white-space: pre-wrap; word-break: break-all; }
+    .diff-added { background-color: #dcfce7; border-left: 3px solid #22c55e; }
+    .diff-removed { background-color: #fee2e2; border-left: 3px solid #ef4444; }
+    .diff-equal { background-color: #f9fafb; border-left: 3px solid #e5e7eb; }
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="../" class="flex items-center gap-2">
+                <span class="text-2xl">☁️</span>
+                <span class="text-xl font-bold text-gray-800">Cloudry</span>
+            </a>
+            <a href="../" class="text-sm text-blue-600 hover:underline">← All Tools</a>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-12" x-data="diffChecker()">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">📝 Diff Checker</h1>
+        <p class="text-gray-600 mb-8">Compare two texts side by side. Paste your original and modified text to see what changed.</p>
+
+        <!-- Input Area -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Original Text</label>
+                <textarea x-model="text1" rows="12" placeholder="Paste original text here..."
+                          class="w-full border border-gray-300 rounded-lg px-4 py-3 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Modified Text</label>
+                <textarea x-model="text2" rows="12" placeholder="Paste modified text here..."
+                          class="w-full border border-gray-300 rounded-lg px-4 py-3 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"></textarea>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-wrap gap-3 mb-6">
+            <button @click="compare()" :disabled="(!text1 && !text2) || loading"
+                    class="bg-blue-600 text-white py-2.5 px-6 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition">
+                <span x-show="!loading">🔍 Compare</span>
+                <span x-show="loading">⏳ Comparing...</span>
+            </button>
+            <button @click="swap()" class="bg-gray-100 text-gray-700 py-2.5 px-4 rounded-lg font-medium hover:bg-gray-200 border border-gray-300 transition">
+                🔄 Swap
+            </button>
+            <button @click="clearAll()" class="bg-gray-100 text-gray-700 py-2.5 px-4 rounded-lg font-medium hover:bg-gray-200 border border-gray-300 transition">
+                🗑️ Clear
+            </button>
+            <button @click="loadSample()" x-show="!text1 && !text2" class="bg-gray-100 text-gray-700 py-2.5 px-4 rounded-lg font-medium hover:bg-gray-200 border border-gray-300 transition">
+                📋 Load Sample
+            </button>
+        </div>
+
+        <!-- Error -->
+        <div x-show="error" x-cloak class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm" x-text="error"></div>
+
+        <!-- Results -->
+        <div x-show="result" x-cloak>
+            <!-- Stats -->
+            <div class="bg-white rounded-xl shadow-sm border p-4 mb-4">
+                <div class="flex flex-wrap gap-4 text-sm">
+                    <span class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded bg-green-500 inline-block"></span>
+                        <span x-text="result?.stats?.added + ' added'"></span>
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded bg-red-500 inline-block"></span>
+                        <span x-text="result?.stats?.removed + ' removed'"></span>
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded bg-gray-300 inline-block"></span>
+                        <span x-text="result?.stats?.unchanged + ' unchanged'"></span>
+                    </span>
+                    <span class="ml-auto font-medium" x-text="result?.stats?.similarity + '% similar'"></span>
+                </div>
+            </div>
+
+            <!-- Identical notice -->
+            <div x-show="result?.identical" class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4">
+                ✅ Both texts are identical. No differences found.
+            </div>
+
+            <!-- Diff Output -->
+            <div x-show="!result?.identical" class="bg-white rounded-xl shadow-sm border overflow-hidden">
+                <div class="p-3 bg-gray-50 border-b flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-700">Changes</span>
+                    <div class="flex gap-2">
+                        <button @click="viewMode = 'inline'" :class="viewMode === 'inline' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'"
+                                class="text-xs px-3 py-1 rounded-md font-medium transition">Inline</button>
+                        <button @click="viewMode = 'unified'" :class="viewMode === 'unified' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'"
+                                class="text-xs px-3 py-1 rounded-md font-medium transition">Unified</button>
+                    </div>
+                </div>
+
+                <!-- Inline View -->
+                <div x-show="viewMode === 'inline'" class="max-h-96 overflow-y-auto">
+                    <template x-for="(change, idx) in result?.changes || []" :key="idx">
+                        <div class="diff-line"
+                             :class="{
+                                'diff-added': change.type === 'added',
+                                'diff-removed': change.type === 'removed',
+                                'diff-equal': change.type === 'equal'
+                             }">
+                            <span class="select-none text-gray-400 mr-2" x-text="change.type === 'added' ? '+' : change.type === 'removed' ? '-' : ' '"></span><span x-text="change.content"></span>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Unified View (raw diff) -->
+                <div x-show="viewMode === 'unified'" class="max-h-96 overflow-y-auto p-4">
+                    <pre class="font-mono text-xs whitespace-pre-wrap" x-text="result?.unified_diff"></pre>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-16 py-8 text-center text-sm text-gray-500">
+        <p>🔒 No data stored. Texts compared in memory and discarded.</p>
+    </footer>
+
+    <script src="../assets/js/app.js"></script>
+    <script>
+    function diffChecker() {
+        return {
+            text1: '',
+            text2: '',
+            loading: false,
+            error: '',
+            result: null,
+            viewMode: 'inline',
+
+            async compare() {
+                if (!this.text1 && !this.text2) return;
+                this.loading = true;
+                this.error = '';
+                this.result = null;
+
+                const formData = new FormData();
+                formData.append('text1', this.text1);
+                formData.append('text2', this.text2);
+
+                try {
+                    const response = await fetch(`${API_BASE}/text/diff`, {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    if (!response.ok) {
+                        const err = await response.json().catch(() => ({ detail: 'Unknown error' }));
+                        throw new Error(err.detail || `Error ${response.status}`);
+                    }
+
+                    this.result = await response.json();
+                } catch (e) {
+                    this.error = e.message;
+                }
+
+                this.loading = false;
+            },
+
+            swap() {
+                const temp = this.text1;
+                this.text1 = this.text2;
+                this.text2 = temp;
+                this.result = null;
+            },
+
+            clearAll() {
+                this.text1 = '';
+                this.text2 = '';
+                this.result = null;
+                this.error = '';
+            },
+
+            loadSample() {
+                this.text1 = `function greet(name) {\n  console.log("Hello, " + name);\n  return true;\n}\n\ngreet("World");`;
+                this.text2 = `function greet(name, greeting = "Hello") {\n  console.log(greeting + ", " + name + "!");\n  return true;\n}\n\ngreet("World", "Hi");`;
+            }
+        };
+    }
+    </script>
+</body>
+</html>
