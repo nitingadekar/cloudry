@@ -1,6 +1,6 @@
-"""Text utility endpoints — Base64, JSON, Color conversion."""
+"""Text utility endpoints — Base64, JSON, Color conversion, Diff."""
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from src.middleware.captcha import verify_turnstile
 from src.services.text_service import TextService
@@ -66,4 +66,30 @@ async def color_convert(color: str = Form(...), to_format: str = Form(...)):
     - color="#ff5733", to_format="hsl" → "hsl(11, 100%, 60%)"
     """
     result = text_service.color_convert(color, to_format)
+    return result
+
+
+@router.post("/diff", dependencies=[Depends(verify_turnstile)])
+async def diff_texts(
+    text1: str = Form(default=""),
+    text2: str = Form(default=""),
+    context_lines: int = Form(default=3),
+):
+    """Compare two texts and show differences.
+
+    Returns unified diff, line-by-line changes with types (added/removed/equal),
+    and statistics (similarity percentage, line counts).
+    """
+    # Limit input size (prevent abuse)
+    max_size = 100_000  # 100KB per text
+    if len(text1) > max_size or len(text2) > max_size:
+        raise HTTPException(status_code=422, detail="Text too large. Maximum 100KB per input.")
+
+    context_lines = max(0, min(10, context_lines))
+
+    try:
+        result = text_service.diff_texts(text1, text2, context_lines=context_lines)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+
     return result
