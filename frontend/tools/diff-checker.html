@@ -17,10 +17,21 @@
   gtag('config', 'G-494WQJ79BE');
 </script>
 <style>
-    .diff-line { font-family: 'Courier New', monospace; font-size: 13px; padding: 2px 8px; white-space: pre-wrap; word-break: break-all; }
-    .diff-added { background-color: #dcfce7; border-left: 3px solid #22c55e; }
-    .diff-removed { background-color: #fee2e2; border-left: 3px solid #ef4444; }
-    .diff-equal { background-color: #f9fafb; border-left: 3px solid #e5e7eb; }
+    .diff-table { border-collapse: collapse; width: 100%; font-family: 'SFMono-Regular', 'Menlo', 'Monaco', 'Courier New', monospace; font-size: 12px; line-height: 20px; }
+    .diff-table td { padding: 0 10px; vertical-align: top; white-space: pre-wrap; word-break: break-all; }
+    .diff-table .line-num { width: 1%; min-width: 40px; padding: 0 8px; text-align: right; color: rgba(31,35,40,0.4); user-select: none; -webkit-user-select: none; }
+    .diff-table .line-sign { width: 1%; min-width: 20px; padding: 0 4px; text-align: center; user-select: none; -webkit-user-select: none; }
+    .diff-table .line-content { padding: 0 8px; }
+    .diff-row-added { background-color: #e6ffec; }
+    .diff-row-added .line-num { background-color: #ccffd8; }
+    .diff-row-added .line-sign { color: #1a7f37; }
+    .diff-row-removed { background-color: #ffebe9; }
+    .diff-row-removed .line-num { background-color: #ffd7d5; }
+    .diff-row-removed .line-sign { color: #cf222e; }
+    .diff-row-equal { background-color: #ffffff; }
+    .diff-row-equal .line-num { background-color: #f6f8fa; }
+    .diff-hunk { background-color: #ddf4ff; color: rgba(31,35,40,0.7); font-style: italic; }
+    .diff-hunk td { padding: 4px 10px; }
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -36,36 +47,36 @@
 
     <main class="max-w-7xl mx-auto px-4 py-12" x-data="diffChecker()">
         <h1 class="text-3xl font-bold text-gray-900 mb-2">📝 Diff Checker</h1>
-        <p class="text-gray-600 mb-8">Compare two texts side by side. Paste your original and modified text to see what changed.</p>
+        <p class="text-gray-600 mb-8">Compare two texts and see what changed — GitHub-style diff view.</p>
 
         <!-- Input Area -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Original Text</label>
                 <textarea x-model="text1" rows="12" placeholder="Paste original text here..."
-                          class="w-full border border-gray-300 rounded-lg px-4 py-3 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"></textarea>
+                          class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"></textarea>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Modified Text</label>
                 <textarea x-model="text2" rows="12" placeholder="Paste modified text here..."
-                          class="w-full border border-gray-300 rounded-lg px-4 py-3 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"></textarea>
+                          class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"></textarea>
             </div>
         </div>
 
         <!-- Actions -->
         <div class="flex flex-wrap gap-3 mb-6">
             <button @click="compare()" :disabled="(!text1 && !text2) || loading"
-                    class="bg-blue-600 text-white py-2.5 px-6 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition">
+                    class="bg-blue-600 text-white py-2 px-5 rounded-md font-medium text-sm hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition">
                 <span x-show="!loading">🔍 Compare</span>
                 <span x-show="loading">⏳ Comparing...</span>
             </button>
-            <button @click="swap()" class="bg-gray-100 text-gray-700 py-2.5 px-4 rounded-lg font-medium hover:bg-gray-200 border border-gray-300 transition">
+            <button @click="swap()" class="bg-white text-gray-700 py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-50 border border-gray-300 transition">
                 🔄 Swap
             </button>
-            <button @click="clearAll()" class="bg-gray-100 text-gray-700 py-2.5 px-4 rounded-lg font-medium hover:bg-gray-200 border border-gray-300 transition">
+            <button @click="clearAll()" class="bg-white text-gray-700 py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-50 border border-gray-300 transition">
                 🗑️ Clear
             </button>
-            <button @click="loadSample()" x-show="!text1 && !text2" class="bg-gray-100 text-gray-700 py-2.5 px-4 rounded-lg font-medium hover:bg-gray-200 border border-gray-300 transition">
+            <button @click="loadSample()" x-show="!text1 && !text2" class="bg-white text-gray-700 py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-50 border border-gray-300 transition">
                 📋 Load Sample
             </button>
         </div>
@@ -75,59 +86,67 @@
 
         <!-- Results -->
         <div x-show="result" x-cloak>
-            <!-- Stats -->
-            <div class="bg-white rounded-xl shadow-sm border p-4 mb-4">
-                <div class="flex flex-wrap gap-4 text-sm">
-                    <span class="flex items-center gap-1">
-                        <span class="w-3 h-3 rounded bg-green-500 inline-block"></span>
-                        <span x-text="result?.stats?.added + ' added'"></span>
-                    </span>
-                    <span class="flex items-center gap-1">
-                        <span class="w-3 h-3 rounded bg-red-500 inline-block"></span>
-                        <span x-text="result?.stats?.removed + ' removed'"></span>
-                    </span>
-                    <span class="flex items-center gap-1">
-                        <span class="w-3 h-3 rounded bg-gray-300 inline-block"></span>
-                        <span x-text="result?.stats?.unchanged + ' unchanged'"></span>
-                    </span>
-                    <span class="ml-auto font-medium" x-text="result?.stats?.similarity + '% similar'"></span>
-                </div>
+            <!-- Stats Bar -->
+            <div class="bg-white rounded-lg border border-gray-200 px-4 py-2.5 mb-3 flex flex-wrap items-center gap-4 text-xs">
+                <span class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-sm bg-green-500 inline-block"></span>
+                    <span class="font-medium" x-text="'+' + result?.stats?.added"></span>
+                    <span class="text-gray-500">added</span>
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-sm bg-red-500 inline-block"></span>
+                    <span class="font-medium" x-text="'-' + result?.stats?.removed"></span>
+                    <span class="text-gray-500">removed</span>
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-sm bg-gray-300 inline-block"></span>
+                    <span class="font-medium" x-text="result?.stats?.unchanged"></span>
+                    <span class="text-gray-500">unchanged</span>
+                </span>
+                <span class="ml-auto text-gray-600 font-medium" x-text="result?.stats?.similarity + '% match'"></span>
             </div>
 
             <!-- Identical notice -->
-            <div x-show="result?.identical" class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4">
+            <div x-show="result?.identical" class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
                 ✅ Both texts are identical. No differences found.
             </div>
 
-            <!-- Diff Output -->
-            <div x-show="!result?.identical" class="bg-white rounded-xl shadow-sm border overflow-hidden">
-                <div class="p-3 bg-gray-50 border-b flex items-center justify-between">
-                    <span class="text-sm font-medium text-gray-700">Changes</span>
-                    <div class="flex gap-2">
-                        <button @click="viewMode = 'inline'" :class="viewMode === 'inline' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'"
-                                class="text-xs px-3 py-1 rounded-md font-medium transition">Inline</button>
-                        <button @click="viewMode = 'unified'" :class="viewMode === 'unified' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'"
-                                class="text-xs px-3 py-1 rounded-md font-medium transition">Unified</button>
+            <!-- Diff Output — GitHub Style -->
+            <div x-show="!result?.identical" class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <!-- Header -->
+                <div class="px-3 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                    <span class="text-xs text-gray-600 font-medium">Showing changes</span>
+                    <div class="flex gap-1">
+                        <button @click="viewMode = 'inline'" :class="viewMode === 'inline' ? 'bg-white border-gray-300 shadow-sm' : 'border-transparent'"
+                                class="text-xs px-2.5 py-1 rounded border font-medium text-gray-700 transition">Inline</button>
+                        <button @click="viewMode = 'unified'" :class="viewMode === 'unified' ? 'bg-white border-gray-300 shadow-sm' : 'border-transparent'"
+                                class="text-xs px-2.5 py-1 rounded border font-medium text-gray-700 transition">Raw</button>
                     </div>
                 </div>
 
-                <!-- Inline View -->
-                <div x-show="viewMode === 'inline'" class="max-h-96 overflow-y-auto">
-                    <template x-for="(change, idx) in result?.changes || []" :key="idx">
-                        <div class="diff-line"
-                             :class="{
-                                'diff-added': change.type === 'added',
-                                'diff-removed': change.type === 'removed',
-                                'diff-equal': change.type === 'equal'
-                             }">
-                            <span class="select-none text-gray-400 mr-2" x-text="change.type === 'added' ? '+' : change.type === 'removed' ? '-' : ' '"></span><span x-text="change.content"></span>
-                        </div>
-                    </template>
+                <!-- Inline View (GitHub-style table) -->
+                <div x-show="viewMode === 'inline'" class="overflow-x-auto max-h-[500px] overflow-y-auto">
+                    <table class="diff-table">
+                        <tbody>
+                            <template x-for="(change, idx) in result?.changes || []" :key="idx">
+                                <tr :class="{
+                                    'diff-row-added': change.type === 'added',
+                                    'diff-row-removed': change.type === 'removed',
+                                    'diff-row-equal': change.type === 'equal'
+                                }">
+                                    <td class="line-num" x-text="change.type !== 'added' ? change.leftNum : ''"></td>
+                                    <td class="line-num" x-text="change.type !== 'removed' ? change.rightNum : ''"></td>
+                                    <td class="line-sign" x-text="change.type === 'added' ? '+' : change.type === 'removed' ? '-' : ''"></td>
+                                    <td class="line-content" x-text="change.content"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
                 </div>
 
-                <!-- Unified View (raw diff) -->
-                <div x-show="viewMode === 'unified'" class="max-h-96 overflow-y-auto p-4">
-                    <pre class="font-mono text-xs whitespace-pre-wrap" x-text="result?.unified_diff"></pre>
+                <!-- Unified/Raw View -->
+                <div x-show="viewMode === 'unified'" class="overflow-x-auto max-h-[500px] overflow-y-auto p-3">
+                    <pre class="font-mono text-xs leading-5 whitespace-pre-wrap text-gray-800" x-text="result?.unified_diff"></pre>
                 </div>
             </div>
         </div>
@@ -169,12 +188,38 @@
                         throw new Error(err.detail || `Error ${response.status}`);
                     }
 
-                    this.result = await response.json();
+                    const data = await response.json();
+                    // Add line numbers to changes
+                    data.changes = this.addLineNumbers(data.changes);
+                    this.result = data;
                 } catch (e) {
                     this.error = e.message;
                 }
 
                 this.loading = false;
+            },
+
+            addLineNumbers(changes) {
+                let leftNum = 0;
+                let rightNum = 0;
+                return changes.map(c => {
+                    const change = { ...c };
+                    if (c.type === 'equal') {
+                        leftNum++;
+                        rightNum++;
+                        change.leftNum = leftNum;
+                        change.rightNum = rightNum;
+                    } else if (c.type === 'removed') {
+                        leftNum++;
+                        change.leftNum = leftNum;
+                        change.rightNum = '';
+                    } else if (c.type === 'added') {
+                        rightNum++;
+                        change.leftNum = '';
+                        change.rightNum = rightNum;
+                    }
+                    return change;
+                });
             },
 
             swap() {
